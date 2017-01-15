@@ -1,0 +1,43 @@
+{
+  "name": "alien-hunter-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "author": "",
+  "license": "ISC",
+  "scripts": {
+    "build": "rimraf dist && ntsc -p src",
+	"start": "npm run build && node dist/server/src/index.js",
+	"deploy": "npm run build",
+    "start--prod": "node dist/server/src/index.js"
+  },
+  "dependencies": {
+    "express": "^4.13.4",
+    "jsonwebtoken": "^7.1.9",
+    "moment": "^2.16.0",
+    "passport": "^0.3.2",
+    "passport-facebook": "^2.1.1",
+    "passport-google-oauth": "^1.0.0",
+    "passport-http-bearer": "^1.0.1",
+    "passport-local": "^1.0.0",
+    "promise": "^7.1.1",
+    "request": "^2.74.0",
+    "request-promise": "^4.1.1",
+    "socket.io": "^1.4.6",
+	"@types/express": "^4.0.30",
+    "@types/jsonwebtoken": "^7.1.33",
+    "@types/passport": "^0.2.34",
+    "@types/passport-facebook": "^1.0.29",
+    "@types/passport-google-oauth": "^1.0.32",
+    "@types/passport-http-bearer": "^1.0.30",
+    "@types/passport-local": "^1.0.29",
+    "@types/promise": "^7.1.27",
+    "@types/request": "0.0.28",
+    "@types/request-promise": "^4.1.33",
+    "@types/serve-static": "^1.7.28",
+    "@types/socket.io": "^1.4.26",
+    "ntypescript": "^1.201609302242.1",
+    "rimraf": "^2.5.4",
+    "typescript": "^2.0.0"
+  }
+}

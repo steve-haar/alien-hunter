@@ -1,0 +1,8 @@
+<p>
+  {{playerName}} in {{roomName}}
+</p>
+<button type="button" (click)="startGame()">Start</button>
+<br />
+Latency: {{roomService.latency}}
+<br />
+<app-game [gameScene]="(gameScene | async)" (move)="move($event)"></app-game>
