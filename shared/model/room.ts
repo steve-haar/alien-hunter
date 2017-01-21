@@ -1,4 +1,4 @@
-import { Player } from './';
+import { Player } from './player';
 
 export class Room {
 	public password: string;
@@ -13,8 +13,8 @@ export class Room {
 
 	public static deserialize(input: Room) {
 		if (input) {
-			let room = new Room(Player.deserialize(input.hostPlayer), input.roomName, input.locked);
-			room.players = input.players.map(player => Player.deserialize(player));
+			let room = new Room(input.hostPlayer, input.roomName, input.locked);
+			room.players = input.players;
 			room.isHostAction = input.isHostAction;
 			return room;
 		} else {
@@ -35,11 +35,11 @@ export class Room {
 	}
 
 	public getExistingPlayerNames() {
-		return this.players.map(i => i.getName());
+		return this.players.map(i => i.name);
 	}
 
 	public playerExists(playerName: string) {
-		return !!this.players.find(i => i.getName() === playerName);
+		return !!this.players.find(i => i.name === playerName);
 	}
 
 	public isLocked() {
@@ -47,10 +47,10 @@ export class Room {
 	}
 
 	public canJoin(playerName: string, password: string) {
-		let exists = this.players.find(i => i.getName() === playerName);
+		let exists = this.players.find(i => i.name === playerName);
 		return playerName && !exists &&
 			(this.isLocked() === false
-			|| this.hostPlayer.getName() === playerName
+			|| this.hostPlayer.name === playerName
 			|| this.password && this.password === password);
 	}
 
@@ -67,7 +67,7 @@ export class Room {
 	}
 
 	public leave(playerName: string) {
-		let player = this.players.find(i => i.getName() === playerName);
+		let player = this.players.find(i => i.name === playerName);
 		if (player) {
 			this.players.splice(this.players.indexOf(player), 1);
 		}

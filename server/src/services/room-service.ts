@@ -1,4 +1,6 @@
-import { Player, Room } from './../../../shared/model/';
+import { Player } from './../../../shared/model/player';
+import { Room } from './../../../shared/model/room';
+import { PlayerType } from './../../../shared/model/enum';
 
 export class RoomService {
 	private rooms: Room[] = [];
@@ -8,7 +10,7 @@ export class RoomService {
 	}
 
 	public joinRoom(sessionId: string, playerName: string, roomName: string, password: string) {
-		let player = new Player(sessionId, playerName, 0, 0, 0, 0);
+		let player = new Player(sessionId, playerName, PlayerType.Hunter);
 		let room = this.getOrCreateRoom(player, roomName);
 		let canJoin = room.canJoin(playerName, password);
 		if (canJoin) {
@@ -36,7 +38,7 @@ export class RoomService {
 
 	public lockRoom(playerName: string, roomName: string) {
 		let room = this.getRoom(roomName);
-		if (room && room.getHostPlayer().getName() == playerName) {
+		if (room && room.getHostPlayer().name == playerName) {
 			room.lock();
 			console.log(`room: ${roomName} locked`);
 		} else {
@@ -46,7 +48,7 @@ export class RoomService {
 
 	public unlockRoom(playerName: string, roomName: string) {
 		let room = this.getRoom(roomName);
-		if (room && room.getHostPlayer().getName() == playerName) {
+		if (room && room.getHostPlayer().name == playerName) {
 			room.unlock();
 			console.log(`room: ${roomName} unlocked`);
 		} else {
@@ -56,7 +58,7 @@ export class RoomService {
 
 	public setPassword(playerName: string, roomName: string, password: string) {
 		let room = this.getRoom(roomName);
-		if (room && room.getHostPlayer().getName() == playerName) {
+		if (room && room.getHostPlayer().name == playerName) {
 			room.password = password;
 			console.log(`password for room ${roomName} is set to ${password}`);
 		}
@@ -67,7 +69,7 @@ export class RoomService {
 		let kicked = false;
 
 		if (room && room.playerExists(playerName)) {
-			if (room && room.getHostPlayer().getName() == playerName) {
+			if (room && room.getHostPlayer().name == playerName) {
 				room.leave(playerName);
 				console.log(`player: ${playerName} kicked from ${roomName}`);
 				kicked = true;

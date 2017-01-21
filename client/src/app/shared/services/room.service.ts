@@ -1,10 +1,11 @@
-import { GameScene } from './../../../../../shared/model/game-scene';
+import { GameBoard } from './../../../../../shared/model/game-board';
+import { Direction } from './../../../../../shared/model/enum';
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { Observable } from 'rxjs/Observable';
-import * as io from 'socket.io-client';
+import { Room } from '../../../../../shared/model/room';
 
-import { Room, Direction } from '../../../../../shared/model';
+import * as io from 'socket.io-client';
 
 const HealthCheckInterval = 1000;
 
@@ -24,9 +25,9 @@ export class RoomService {
   }
 
   joinRoom(userName: string, roomName: string, password: string, userNameCallback: (userName: string) => void):
-    [Observable<Room>, Observable<GameScene>] {
+    [Observable<Room>, Observable<GameBoard>] {
     let roomObs: BehaviorSubject<Room> = new BehaviorSubject<Room>(undefined);
-    let gameSceneObs: BehaviorSubject<GameScene> = new BehaviorSubject<GameScene>(undefined);
+    let gameBoardObs: BehaviorSubject<GameBoard> = new BehaviorSubject<GameBoard>(undefined);
 
     if (this.socket.connected) {
       this.socket.emit('join', userName, roomName, password);
@@ -36,11 +37,11 @@ export class RoomService {
 
     this.socket.addEventListener('playerName', userNameCallback);
     this.socket.addEventListener('room', room => roomObs.next(room));
-    this.socket.addEventListener('game', gameScene => gameSceneObs.next(gameScene));
+    this.socket.addEventListener('game', gameBoard => gameBoardObs.next(GameBoard.deserialize(gameBoard)));
     this.socket.addEventListener('health', () => this.latency = new Date().getTime() - this.healthCheckSendTime);
 
     setInterval(() => this.healthCheck(), HealthCheckInterval);
-    return [roomObs, gameSceneObs];
+    return [roomObs, gameBoardObs];
   }
 
   lockRoom() {

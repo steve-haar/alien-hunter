@@ -1,29 +1,15 @@
 "use strict";
-class Player {
-    constructor(sessionId, name, id, x, y, z) {
+const enum_1 = require("./enum");
+const game_element_1 = require("./game-element");
+class Player extends game_element_1.GameElement {
+    constructor(sessionId, name, playerType) {
+        super(playerType === enum_1.PlayerType.Alien ? enum_1.ElementType.Alien : enum_1.ElementType.Hunter);
         this.sessionId = sessionId;
         this.name = name;
-        this.id = id;
-        this.x = x;
-        this.y = y;
-        this.z = z;
+        this.playerType = playerType;
     }
-    static deserialize(input) {
-        return new Player(input.sessionId, input.name, input.id, input.x, input.y, input.z);
-    }
-    static serialize(input) {
-        return input;
-    }
-    getSessionId() {
-        return this.sessionId;
-    }
-    getName() {
-        return this.name;
-    }
-    setPosition(coordinate) {
-        this.x = coordinate.x;
-        this.y = coordinate.y;
-        this.z = coordinate.z;
+    canPushBlocks() {
+        return this.playerType === enum_1.PlayerType.Hunter;
     }
 }
 exports.Player = Player;

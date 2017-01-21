@@ -3,7 +3,9 @@ import { ActivatedRoute } from '@angular/router';
 import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs/Observable';
 
-import { Room, GameScene, Direction } from '../../../../shared/model';
+import { Direction } from '../../../../shared/model/enum';
+import { Room } from '../../../../shared/model/room';
+import { GameBoard } from '../../../../shared/model/game-board';
 import { RoomService } from '../shared/services/room.service';
 
 @Component({
@@ -15,7 +17,7 @@ export class RoomComponent implements OnInit, OnDestroy {
   playerName: string;
   roomName: string;
   room: Observable<Room>;
-  gameScene: Observable<GameScene>;
+  gameBoard: Observable<GameBoard>;
   roomService = new RoomService();
 
   constructor(private activatedRoute: ActivatedRoute) { }
@@ -43,6 +45,6 @@ export class RoomComponent implements OnInit, OnDestroy {
   private joinRoom(password?: string) {
     let obs = this.roomService.joinRoom(this.playerName, this.roomName, password, (playerName) => this.playerName = playerName);
     this.room = obs[0];
-    this.gameScene = obs[1];
+    this.gameBoard = obs[1];
   }
 }

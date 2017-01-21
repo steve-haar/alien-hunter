@@ -1,5 +1,7 @@
 "use strict";
-const _1 = require("./../../../shared/model/");
+const player_1 = require("./../../../shared/model/player");
+const room_1 = require("./../../../shared/model/room");
+const enum_1 = require("./../../../shared/model/enum");
 class RoomService {
     constructor() {
         this.rooms = [];
@@ -8,7 +10,7 @@ class RoomService {
         return this.rooms.find(i => i.getName() === roomName);
     }
     joinRoom(sessionId, playerName, roomName, password) {
-        let player = new _1.Player(sessionId, playerName, 0, 0, 0, 0);
+        let player = new player_1.Player(sessionId, playerName, enum_1.PlayerType.Hunter);
         let room = this.getOrCreateRoom(player, roomName);
         let canJoin = room.canJoin(playerName, password);
         if (canJoin) {
@@ -33,7 +35,7 @@ class RoomService {
     }
     lockRoom(playerName, roomName) {
         let room = this.getRoom(roomName);
-        if (room && room.getHostPlayer().getName() == playerName) {
+        if (room && room.getHostPlayer().name == playerName) {
             room.lock();
             console.log(`room: ${roomName} locked`);
         }
@@ -43,7 +45,7 @@ class RoomService {
     }
     unlockRoom(playerName, roomName) {
         let room = this.getRoom(roomName);
-        if (room && room.getHostPlayer().getName() == playerName) {
+        if (room && room.getHostPlayer().name == playerName) {
             room.unlock();
             console.log(`room: ${roomName} unlocked`);
         }
@@ -53,7 +55,7 @@ class RoomService {
     }
     setPassword(playerName, roomName, password) {
         let room = this.getRoom(roomName);
-        if (room && room.getHostPlayer().getName() == playerName) {
+        if (room && room.getHostPlayer().name == playerName) {
             room.password = password;
             console.log(`password for room ${roomName} is set to ${password}`);
         }
@@ -62,7 +64,7 @@ class RoomService {
         let room = this.getRoom(roomName);
         let kicked = false;
         if (room && room.playerExists(playerName)) {
-            if (room && room.getHostPlayer().getName() == playerName) {
+            if (room && room.getHostPlayer().name == playerName) {
                 room.leave(playerName);
                 console.log(`player: ${playerName} kicked from ${roomName}`);
                 kicked = true;
@@ -76,7 +78,7 @@ class RoomService {
     getOrCreateRoom(hostPlayer, roomName) {
         let room = this.getRoom(roomName);
         if (room === undefined) {
-            room = new _1.Room(hostPlayer, roomName, false);
+            room = new room_1.Room(hostPlayer, roomName, false);
             this.rooms.push(room);
             console.log(`room: ${room.getName()} has been created`);
         }

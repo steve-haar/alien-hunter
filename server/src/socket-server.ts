@@ -1,9 +1,11 @@
-import { Room, Player, GameScene, Direction } from '../../shared/model/';
+import { GameBoard } from './../../shared/model/game-board';
+import { Room } from './../../shared/model/room';
+import { Direction } from '../../shared/model/enum';
 import { NameService, RoomService, GameService } from './services';
 import * as io from 'socket.io';
 import * as http from 'http';
 
-const GameUpdateInterval = 16;
+const GameUpdateInterval = 75;
 
 export class SocketServer {
   private socketServer: SocketIO.Server;
@@ -42,7 +44,7 @@ export class SocketServer {
       let room = this.roomService.getRoom(roomName);
       socket.join('room:' + roomName);
       this.broadcastPlayerNameUpdates(room);
-      this.broadcastUpdate(room, room.getHostPlayer().getName() === playerName);
+      this.broadcastUpdate(room, room.getHostPlayer().name === playerName);
       this.hookEvents(socket, playerName, room);
     } else {
       this.socketServer.to(sessionId).emit('update', null);
@@ -61,8 +63,8 @@ export class SocketServer {
 
     socket.in('room:' + room.getName()).on('kickPlayer', (playerNameToKick) => {
       let playerToKick = this.getPlayer(room, playerNameToKick);
-      if (playerToKick && this.roomService.kickPlayer(playerName, room.getName(), playerToKick.getName())) {
-        let sessionIdToKick = playerToKick.getSessionId();
+      if (playerToKick && this.roomService.kickPlayer(playerName, room.getName(), playerToKick.sessionId)) {
+        let sessionIdToKick = playerToKick.sessionId;
         let socketToKick = this.socketServer.sockets.connected[sessionIdToKick];
         if (socketToKick) {
           socketToKick.leave('room:' + room.getName());
@@ -89,7 +91,7 @@ export class SocketServer {
     });
 
     socket.in('room:' + room.getName()).on('startGame', () => {
-      this.gameService.startGame(room);
+      this.gameService.startGame(room, 0);
       this.broadcastGameUpdate(room.getName());
       this.gameIntervals[room.getName()] = setInterval(() => this.updateGame(room.getName()), GameUpdateInterval);
     });
@@ -100,22 +102,22 @@ export class SocketServer {
 
     socket.in('room:' + room.getName()).on('health', () => {
       let player = this.getPlayer(room, playerName);
-      this.socketServer.to(player.getSessionId()).emit('health');
+      this.socketServer.to(player.sessionId).emit('health');
     });
   }
 
   private getPlayer(room: Room, playerName: string) {
-    return room.players.find(i => i.getName() === playerName);
+    return room.players.find(i => i.name === playerName);
   }
 
   private updateGame(roomName: string) {
-    this.gameService.updateScene(roomName);
+    this.gameService.updateGame(roomName);
     this.broadcastGameUpdate(roomName);
   }
 
   private broadcastGameUpdate(roomName: string) {
-    let gameScene = this.gameService.getGameScene(roomName);
-    this.socketServer.in('room:' + roomName).emit('game', GameScene.serialize(gameScene));
+    let gameBoard = this.gameService.getGameBoard(roomName);
+    this.socketServer.in('room:' + roomName).emit('game', GameBoard.serialize(gameBoard));
   }
 
   private broadcastUpdate(room: Room, isHostAction: boolean) {
@@ -124,8 +126,8 @@ export class SocketServer {
 
   private broadcastPlayerNameUpdates(room: Room) {
     room.players.map(player => {
-      let sessionId = player.getSessionId();
-      this.socketServer.to(sessionId).emit('playerName', player.getName());
+      let sessionId = player.sessionId;
+      this.socketServer.to(sessionId).emit('playerName', player.name);
     });
   }
 }

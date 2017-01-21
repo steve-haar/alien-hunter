@@ -1,5 +1,4 @@
 "use strict";
-const _1 = require("./");
 class Room {
     constructor(hostPlayer, roomName, locked) {
         this.hostPlayer = hostPlayer;
@@ -9,8 +8,8 @@ class Room {
     }
     static deserialize(input) {
         if (input) {
-            let room = new Room(_1.Player.deserialize(input.hostPlayer), input.roomName, input.locked);
-            room.players = input.players.map(player => _1.Player.deserialize(player));
+            let room = new Room(input.hostPlayer, input.roomName, input.locked);
+            room.players = input.players;
             room.isHostAction = input.isHostAction;
             return room;
         }
@@ -28,19 +27,19 @@ class Room {
         return this.roomName;
     }
     getExistingPlayerNames() {
-        return this.players.map(i => i.getName());
+        return this.players.map(i => i.name);
     }
     playerExists(playerName) {
-        return !!this.players.find(i => i.getName() === playerName);
+        return !!this.players.find(i => i.name === playerName);
     }
     isLocked() {
         return this.locked;
     }
     canJoin(playerName, password) {
-        let exists = this.players.find(i => i.getName() === playerName);
+        let exists = this.players.find(i => i.name === playerName);
         return playerName && !exists &&
             (this.isLocked() === false
-                || this.hostPlayer.getName() === playerName
+                || this.hostPlayer.name === playerName
                 || this.password && this.password === password);
     }
     lock() {
@@ -53,7 +52,7 @@ class Room {
         this.players.push(player);
     }
     leave(playerName) {
-        let player = this.players.find(i => i.getName() === playerName);
+        let player = this.players.find(i => i.name === playerName);
         if (player) {
             this.players.splice(this.players.indexOf(player), 1);
         }

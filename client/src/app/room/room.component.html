@@ -5,4 +5,4 @@
 <br />
 Latency: {{roomService.latency}}
 <br />
-<app-game [gameScene]="(gameScene | async)" (move)="move($event)"></app-game>
+<app-game [gameScene]="(gameBoard | async)" (move)="move($event)"></app-game>

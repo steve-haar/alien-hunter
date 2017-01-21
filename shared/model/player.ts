@@ -1,30 +1,14 @@
-import { Coordinate, Direction } from './';
+import { Direction, PlayerType, ElementType } from './enum';
+import { GameElement } from './game-element';
 
-export class Player implements Coordinate {
+export class Player extends GameElement {
 	queuedDirection: Direction;
 
-	constructor(private sessionId: string, private name: string, public id: number, public x: number, public y: number, public z: number) {
+	constructor(public sessionId: string, public name: string, public playerType: PlayerType) {
+		super(playerType === PlayerType.Alien ? ElementType.Alien : ElementType.Hunter);
 	}
 
-	public static deserialize(input: Player) {
-		return new Player(input.sessionId, input.name, input.id, input.x, input.y, input.z);
-	}
-
-	public static serialize(input: Player) {
-		return input;
-	}
-
-	public getSessionId() {
-		return this.sessionId;
-	}
-
-	public getName() {
-		return this.name;
-	}
-
-	public setPosition(coordinate: { x, y, z }) {
-		this.x = coordinate.x;
-		this.y = coordinate.y;
-		this.z = coordinate.z;
+	public canPushBlocks() {
+		return this.playerType === PlayerType.Hunter;
 	}
 }
