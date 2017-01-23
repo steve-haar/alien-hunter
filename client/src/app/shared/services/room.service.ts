@@ -36,7 +36,7 @@ export class RoomService {
     }
 
     this.socket.addEventListener('playerName', userNameCallback);
-    this.socket.addEventListener('room', room => roomObs.next(room));
+    this.socket.addEventListener('room', room => roomObs.next(Room.deserialize(room)));
     this.socket.addEventListener('game', gameBoard => gameBoardObs.next(GameBoard.deserialize(gameBoard)));
     this.socket.addEventListener('health', () => this.latency = new Date().getTime() - this.healthCheckSendTime);
 
@@ -50,6 +50,10 @@ export class RoomService {
 
   unlockRoom() {
     this.socket.emit('unlockRoom');
+  }
+
+  updateGameOptions(level: number, bots: number) {
+    this.socket.emit('updateGameOptions', { level, bots });
   }
 
   setPassword(password: string) {

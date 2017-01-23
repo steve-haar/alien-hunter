@@ -42,6 +42,10 @@ export class RoomComponent implements OnInit, OnDestroy {
     this.roomService.move(direction);
   }
 
+  updateGameOptions(level: number, bots: number) {
+    this.roomService.updateGameOptions(level, bots);
+  }
+
   private joinRoom(password?: string) {
     let obs = this.roomService.joinRoom(this.playerName, this.roomName, password, (playerName) => this.playerName = playerName);
     this.room = obs[0];

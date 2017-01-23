@@ -1,8 +1,15 @@
 <p>
-  {{playerName}} in {{roomName}}
+  {{playerName}} in {{roomName}} on level {{(room | async)?.level}}
 </p>
 <button type="button" (click)="startGame()">Start</button>
 <br />
 Latency: {{roomService.latency}}
 <br />
+<div *ngIf="(room | async)?.getHostPlayer().name === playerName">
+  <input #level type="number" min="0" max="2" [value]="(room | async)?.level || 0" />
+  <input #bots type="number" min="0" max="30" [value]="(room | async)?.bots || 0" />
+  <button type="button" (click)="updateGameOptions(level.value, bots.value)">Submit</button>
+  <br />
+  <br />
+</div>
 <app-game [gameScene]="(gameBoard | async)" (move)="move($event)"></app-game>

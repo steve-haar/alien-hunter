@@ -1,9 +1,10 @@
 import { Player } from './../../../shared/model/player';
+import { Bot } from './../../../shared/model/bot';
 import { Block } from './../../../shared/model/block';
 import { Room } from './../../../shared/model/room';
 import { GameBoard } from './../../../shared/model/game-board';
 import { GameElement } from './../../../shared/model/game-element';
-import { Direction, ElementType, InitialSpaceType } from './../../../shared/model/enum';
+import { Direction, ElementType, InitialSpaceType, PlayerType } from './../../../shared/model/enum';
 import { Coordinate, InitialSpace } from './../../../shared/model/model';
 import { Levels } from './levels';
 
@@ -15,20 +16,40 @@ const MinX = 0;
 const MaxY = GameHeight - 1;
 const MinY = 0;
 
+const BotCourseChange = 4;
+const BotRandomMoveCount = 4;
+
 export class GameService {
 	private levels = new Levels();
 	private gameBoards: { [propName: string]: GameBoard } = {};
 
-	public startGame(room: Room, level: number) {
-		this.gameBoards[room.getName()] = new GameBoard(GameWidth, GameHeight, room.players);
-		let initialSpaces = this.getInitialSpaces(level);
+	public startGame(room: Room) {
+		let bots = this.getBots(room);
+		this.gameBoards[room.getName()] = new GameBoard(GameWidth, GameHeight, room.players, bots);
+		let initialSpaces = this.getInitialSpaces(room.level);
 		this.spawnPlayers(room, initialSpaces);
+		this.spawnBots(room, initialSpaces);
 		this.spawnBlocks(room, initialSpaces);
 	}
 
-	public updateGame(roomName: string) {
+	public moveHunters(roomName: string) {
 		let gameBoard = this.getGameBoard(roomName);
-		gameBoard.players.map(player => this.movePlayer(gameBoard, player));
+		gameBoard.players
+			.filter(player => player.playerType === PlayerType.Hunter)
+			.map(player => this.movePlayer(gameBoard, player));
+	}
+
+	public moveAliens(roomName: string) {
+		let gameBoard = this.getGameBoard(roomName);
+		gameBoard.players
+			.filter(player => player.playerType === PlayerType.Alien)
+			.map(player => this.movePlayer(gameBoard, player));
+	}
+
+	public moveBots(roomName: string) {
+		let gameBoard = this.getGameBoard(roomName);
+		gameBoard.bots
+			.map(bot => this.moveBot(gameBoard, bot));
 	}
 
 	public move(roomName: string, playerName: string, direction: Direction) {
@@ -39,6 +60,15 @@ export class GameService {
 
 	public getGameBoard(roomName: string): GameBoard {
 		return this.gameBoards[roomName];
+	}
+
+	private getBots(room: Room) {
+		let bots = [];
+		for (let i = 0; i < room.bots; i++) {
+			bots.push(new Bot());
+		}
+
+		return bots;
 	}
 
 	private getInitialSpaces(level: number): InitialSpace[] {
@@ -62,6 +92,19 @@ export class GameService {
 		}
 	}
 
+	private spawnBots(room: Room, initialSpaces: InitialSpace[]) {
+		let gameBoard = this.gameBoards[room.getName()];
+		let botSpawnPoints = initialSpaces
+			.filter(s => s.type === InitialSpaceType.AlienSpawn || s.type === InitialSpaceType.BothSpawn)
+			.filter(s => gameBoard.getElement(s) === undefined);
+
+		for (let bot of gameBoard.bots) {
+			let index = Math.floor(Math.random() * botSpawnPoints.length);
+			let spawnPoint = botSpawnPoints.splice(index, 1)[0];
+			gameBoard.setElement(new Coordinate(spawnPoint.x, spawnPoint.y), bot);
+		}
+	}
+
 	private spawnBlocks(room: Room, initialSpaces: InitialSpace[]) {
 		let gameBoard = this.gameBoards[room.getName()];
 		let blockSpawnPoints = initialSpaces.filter(s => s.type === InitialSpaceType.Block);
@@ -74,33 +117,7 @@ export class GameService {
 
 	private movePlayer(gameBoard: GameBoard, player: Player) {
 		let oldPosition = gameBoard.getCoordinateById(player.id);
-		let newPosition: Coordinate = undefined;
-		switch (player.queuedDirection) {
-			case Direction.Up:
-				if (oldPosition.y > MinY) {
-					newPosition = new Coordinate(oldPosition.x, oldPosition.y);
-					newPosition.y -= 1;
-				}
-				break;
-			case Direction.Down:
-				if (oldPosition.y < MaxY) {
-					newPosition = new Coordinate(oldPosition.x, oldPosition.y);
-					newPosition.y += 1;
-				}
-				break;
-			case Direction.Left:
-				if (oldPosition.x > MinX) {
-					newPosition = new Coordinate(oldPosition.x, oldPosition.y);
-					newPosition.x -= 1;
-				}
-				break;
-			case Direction.Right:
-				if (oldPosition.x < MaxX) {
-					newPosition = new Coordinate(oldPosition.x, oldPosition.y);
-					newPosition.x += 1;
-				}
-				break;
-		}
+		let newPosition = this.getPositionOfMove(oldPosition, player.queuedDirection);
 
 		if (newPosition) {
 			let element = gameBoard.getElement(newPosition);
@@ -108,6 +125,54 @@ export class GameService {
 				gameBoard.move(oldPosition, newPosition);
 			} else if (element.type === ElementType.Block) {
 				this.pushBlocks(gameBoard, player, newPosition);
+			}
+		}
+	}
+
+	private moveBot(gameBoard: GameBoard, bot: Bot) {
+		let botCoordinate = gameBoard.getCoordinateById(bot.id);
+		let hunters = gameBoard.players.filter(i => i.playerType === PlayerType.Hunter);
+
+		if (bot.randomCount === 0) {
+			let distances = hunters.map(hunter => { return { id: hunter.id, distance: this.getDistance(gameBoard, bot, hunter) }; });
+			distances.sort((a, b) => a.distance - b.distance);
+			let nearestHunter = distances[0];
+			let trackingHunter = distances.find(i => i.id === bot.trackingId);
+			if (!!trackingHunter || (nearestHunter !== trackingHunter && nearestHunter.distance + BotCourseChange < trackingHunter.distance)) {
+				bot.trackingId = nearestHunter.id;
+			}
+
+			let preyCoordinate = gameBoard.getCoordinateById(bot.trackingId);
+			let xDistance = Math.abs(preyCoordinate.x - botCoordinate.x);
+			let yDistance = Math.abs(preyCoordinate.y - botCoordinate.y);
+			let moves = xDistance >= yDistance ? [Direction.Left, Direction.Right, Direction.Up, Direction.Down] : [Direction.Up, Direction.Down, Direction.Left, Direction.Right];
+
+			let moved = false;
+			for (let i = 0; i < 4; i++) {
+				let newPosition = this.getPositionOfMove(botCoordinate, moves[i]);
+				if (gameBoard.getElement(newPosition) === undefined) {
+					gameBoard.move(botCoordinate, newPosition);
+					moved = true;
+					break;
+				}
+			}
+
+			if (moved == false) {
+				bot.trackingId = null;
+				bot.randomCount = BotRandomMoveCount;
+			}
+		}
+
+		if (bot.randomCount > 0) {
+			bot.randomCount--;
+			let moves = [Direction.Up, Direction.Down, Direction.Left, Direction.Right];
+			for (let i = 0; i < 4; i++) {
+				let move = moves.splice(Math.floor(Math.random() * moves.length));
+				let newPosition = this.getPositionOfMove(botCoordinate, moves[i]);
+				if (gameBoard.getElement(newPosition) === undefined) {
+					gameBoard.move(botCoordinate, newPosition);
+					break;
+				}
 			}
 		}
 	}
@@ -150,5 +215,43 @@ export class GameService {
 				gameBoard.move(prevPosition, position);
 			}
 		}
+	}
+
+	private getDistance(gameBoard: GameBoard, elementA: GameElement, elementB: GameElement) {
+		let a = gameBoard.getCoordinateById(elementA.id);
+		let b = gameBoard.getCoordinateById(elementB.id);
+		return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+	}
+
+	private getPositionOfMove(position: Coordinate, direction: Direction) {
+		let newPosition: Coordinate = undefined;
+		switch (direction) {
+			case Direction.Up:
+				if (position.y > MinY) {
+					newPosition = new Coordinate(position.x, position.y);
+					newPosition.y -= 1;
+				}
+				break;
+			case Direction.Down:
+				if (position.y < MaxY) {
+					newPosition = new Coordinate(position.x, position.y);
+					newPosition.y += 1;
+				}
+				break;
+			case Direction.Left:
+				if (position.x > MinX) {
+					newPosition = new Coordinate(position.x, position.y);
+					newPosition.x -= 1;
+				}
+				break;
+			case Direction.Right:
+				if (position.x < MaxX) {
+					newPosition = new Coordinate(position.x, position.y);
+					newPosition.x += 1;
+				}
+				break;
+		}
+
+		return newPosition;
 	}
 }

@@ -60,6 +60,14 @@ class RoomService {
             console.log(`password for room ${roomName} is set to ${password}`);
         }
     }
+    updateGameOptions(playerName, roomName, options) {
+        let room = this.getRoom(roomName);
+        if (room && room.getHostPlayer().name == playerName) {
+            room.level = options.level;
+            room.bots = options.bots;
+            console.log(`level and bots for room ${roomName} is set to ${options.level} and ${options.bots}`);
+        }
+    }
     kickPlayer(playerName, roomName, playerNameToKick) {
         let room = this.getRoom(roomName);
         let kicked = false;

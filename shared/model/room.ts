@@ -4,6 +4,8 @@ export class Room {
 	public password: string;
 	public players: Player[] = [];
 	public isHostAction: boolean;
+	public level = 0;
+	public bots = 0;
 
 	constructor(
 		public hostPlayer: Player,
@@ -16,6 +18,7 @@ export class Room {
 			let room = new Room(input.hostPlayer, input.roomName, input.locked);
 			room.players = input.players;
 			room.isHostAction = input.isHostAction;
+			room.level = input.level;
 			return room;
 		} else {
 			return null;
@@ -23,7 +26,15 @@ export class Room {
 	}
 
 	public static serialize(input: Room, isHostAction: boolean) {
-		return input;
+		if (input) {
+			let room = new Room(input.hostPlayer, input.roomName, input.locked);
+			room.players = input.players;
+			room.isHostAction = isHostAction;
+			room.level = input.level;
+			return room;
+		} else {
+			return null;
+		}
 	}
 
 	public getHostPlayer() {
@@ -50,8 +61,8 @@ export class Room {
 		let exists = this.players.find(i => i.name === playerName);
 		return playerName && !exists &&
 			(this.isLocked() === false
-			|| this.hostPlayer.name === playerName
-			|| this.password && this.password === password);
+				|| this.hostPlayer.name === playerName
+				|| this.password && this.password === password);
 	}
 
 	public lock() {

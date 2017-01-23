@@ -5,7 +5,9 @@ import { NameService, RoomService, GameService } from './services';
 import * as io from 'socket.io';
 import * as http from 'http';
 
-const GameUpdateInterval = 75;
+const HunterUpdateInterval = 75;
+const AlienUpdateInterval = 75;
+const BotUpdateInterval = 30000;
 
 export class SocketServer {
   private socketServer: SocketIO.Server;
@@ -90,10 +92,17 @@ export class SocketServer {
       this.broadcastUpdate(room, true);
     });
 
+    socket.in('room:' + room.getName()).on('updateGameOptions', (options) => {
+      this.roomService.updateGameOptions(playerName, room.getName(), options);
+      this.broadcastUpdate(room, true);
+    });
+
     socket.in('room:' + room.getName()).on('startGame', () => {
-      this.gameService.startGame(room, 0);
+      this.gameService.startGame(room);
       this.broadcastGameUpdate(room.getName());
-      this.gameIntervals[room.getName()] = setInterval(() => this.updateGame(room.getName()), GameUpdateInterval);
+      this.gameIntervals[room.getName()] = setInterval(() => this.moveHunters(room.getName()), HunterUpdateInterval);
+      this.gameIntervals[room.getName()] = setInterval(() => this.moveAliens(room.getName()), AlienUpdateInterval);
+      this.gameIntervals[room.getName()] = setInterval(() => this.moveBots(room.getName()), BotUpdateInterval);
     });
 
     socket.in('room:' + room.getName()).on('move', (direction: Direction) => {
@@ -110,8 +119,18 @@ export class SocketServer {
     return room.players.find(i => i.name === playerName);
   }
 
-  private updateGame(roomName: string) {
-    this.gameService.updateGame(roomName);
+  private moveHunters(roomName: string) {
+    this.gameService.moveHunters(roomName);
+    this.broadcastGameUpdate(roomName);
+  }
+
+  private moveAliens(roomName: string) {
+    this.gameService.moveAliens(roomName);
+    this.broadcastGameUpdate(roomName);
+  }
+
+  private moveBots(roomName: string) {
+    this.gameService.moveBots(roomName);
     this.broadcastGameUpdate(roomName);
   }
 

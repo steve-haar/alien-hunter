@@ -1,25 +1,25 @@
 "use strict";
 const model_1 = require("./model");
 class GameBoard {
-    constructor(width, height, players) {
+    constructor(width, height, players, bots) {
         this.players = players;
+        this.bots = bots;
         this.board = [];
         for (let i = 0; i < height; i++) {
             this.board.push(new Array(width));
         }
     }
     static serialize(gameBoard) {
-        let result = new GameBoard(1, 1, []);
+        let result = new GameBoard(1, 1, [], []);
         result.board = gameBoard.board;
         return result;
     }
     static deserialize(gameBoard) {
-        let result = new GameBoard(1, 1, []);
+        let result = new GameBoard(1, 1, [], []);
         result.board = gameBoard.board;
         return result;
     }
     move(from, to) {
-        console.log('m');
         this.board[to.y][to.x] = this.board[from.y][from.x];
         this.board[from.y][from.x] = undefined;
     }

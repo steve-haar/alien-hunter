@@ -109,6 +109,7 @@ export class GameRenderService {
         if (element) {
           switch (element.type) {
             case ElementType.Alien:
+              this.createAlien(<Player>element);
               break;
             case ElementType.Block:
               this.createBlock(<Block>element);
@@ -149,6 +150,18 @@ export class GameRenderService {
     this.scene.add(mesh);
     mesh.position.z = width / 2;
     this.elements[block.id] = mesh;
+  }
+
+  private createAlien(player: Player) {
+    let width = Scale;
+    let geometry = new THREE.CubeGeometry(width, width, width);
+    let material = new THREE.MeshBasicMaterial();
+    material.color = new THREE.Color(0, 1, 0);
+    let mesh = new THREE.Mesh(geometry, material);
+    (<any>window).player = (<any>window).player || mesh;
+    mesh.position.z = width / 2;
+    this.scene.add(mesh);
+    this.elements[player.id] = mesh;
   }
 
   private createPlayer(player: Player) {

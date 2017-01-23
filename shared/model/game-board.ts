@@ -1,11 +1,12 @@
 import { Player } from './player';
+import { Bot } from './bot';
 import { Coordinate } from './model';
 import { GameElement } from './game-element';
 
 export class GameBoard {
 	board: GameElement[][];
 
-	constructor(width: number, height: number, public players: Player[]) {
+	constructor(width: number, height: number, public players: Player[], public bots: Bot[]) {
 		this.board = [];
 		for (let i = 0; i < height; i++) {
 			this.board.push(new Array(width));
@@ -13,19 +14,18 @@ export class GameBoard {
 	}
 
 	static serialize(gameBoard: GameBoard) {
-		let result = new GameBoard(1, 1, []);
+		let result = new GameBoard(1, 1, [], []);
 		result.board = gameBoard.board;
 		return result;
 	}
 
 	static deserialize(gameBoard: GameBoard) {
-		let result = new GameBoard(1, 1, []);
+		let result = new GameBoard(1, 1, [], []);
 		result.board = gameBoard.board;
 		return result;
 	}
 
 	move(from: Coordinate, to: Coordinate) {
-		console.log('m');
 		this.board[to.y][to.x] = this.board[from.y][from.x];
 		this.board[from.y][from.x] = undefined;
 	}

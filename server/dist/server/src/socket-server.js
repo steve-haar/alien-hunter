@@ -3,7 +3,9 @@ const game_board_1 = require("./../../shared/model/game-board");
 const room_1 = require("./../../shared/model/room");
 const services_1 = require("./services");
 const io = require("socket.io");
-const GameUpdateInterval = 75;
+const HunterUpdateInterval = 75;
+const AlienUpdateInterval = 75;
+const BotUpdateInterval = 30000;
 class SocketServer {
     constructor(httpServer) {
         this.httpServer = httpServer;
@@ -77,10 +79,16 @@ class SocketServer {
             this.roomService.setPassword(playerName, room.getName(), password);
             this.broadcastUpdate(room, true);
         });
+        socket.in('room:' + room.getName()).on('updateGameOptions', (options) => {
+            this.roomService.updateGameOptions(playerName, room.getName(), options);
+            this.broadcastUpdate(room, true);
+        });
         socket.in('room:' + room.getName()).on('startGame', () => {
-            this.gameService.startGame(room, 0);
+            this.gameService.startGame(room);
             this.broadcastGameUpdate(room.getName());
-            this.gameIntervals[room.getName()] = setInterval(() => this.updateGame(room.getName()), GameUpdateInterval);
+            this.gameIntervals[room.getName()] = setInterval(() => this.moveHunters(room.getName()), HunterUpdateInterval);
+            this.gameIntervals[room.getName()] = setInterval(() => this.moveAliens(room.getName()), AlienUpdateInterval);
+            this.gameIntervals[room.getName()] = setInterval(() => this.moveBots(room.getName()), BotUpdateInterval);
         });
         socket.in('room:' + room.getName()).on('move', (direction) => {
             this.gameService.move(room.getName(), playerName, direction);
@@ -93,8 +101,16 @@ class SocketServer {
     getPlayer(room, playerName) {
         return room.players.find(i => i.name === playerName);
     }
-    updateGame(roomName) {
-        this.gameService.updateGame(roomName);
+    moveHunters(roomName) {
+        this.gameService.moveHunters(roomName);
+        this.broadcastGameUpdate(roomName);
+    }
+    moveAliens(roomName) {
+        this.gameService.moveAliens(roomName);
+        this.broadcastGameUpdate(roomName);
+    }
+    moveBots(roomName) {
+        this.gameService.moveBots(roomName);
         this.broadcastGameUpdate(roomName);
     }
     broadcastGameUpdate(roomName) {

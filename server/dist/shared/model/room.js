@@ -5,12 +5,15 @@ class Room {
         this.roomName = roomName;
         this.locked = locked;
         this.players = [];
+        this.level = 0;
+        this.bots = 0;
     }
     static deserialize(input) {
         if (input) {
             let room = new Room(input.hostPlayer, input.roomName, input.locked);
             room.players = input.players;
             room.isHostAction = input.isHostAction;
+            room.level = input.level;
             return room;
         }
         else {
@@ -18,7 +21,16 @@ class Room {
         }
     }
     static serialize(input, isHostAction) {
-        return input;
+        if (input) {
+            let room = new Room(input.hostPlayer, input.roomName, input.locked);
+            room.players = input.players;
+            room.isHostAction = isHostAction;
+            room.level = input.level;
+            return room;
+        }
+        else {
+            return null;
+        }
     }
     getHostPlayer() {
         return this.hostPlayer;
