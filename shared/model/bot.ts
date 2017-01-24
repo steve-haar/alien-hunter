@@ -2,7 +2,7 @@ import { Direction, PlayerType, ElementType } from './enum';
 import { GameElement } from './game-element';
 
 export class Bot extends GameElement {
-	randomCount: number;
+	randomCount = 0;
 	trackingId: number;
 
 	constructor() {

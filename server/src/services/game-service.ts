@@ -17,7 +17,7 @@ const MaxY = GameHeight - 1;
 const MinY = 0;
 
 const BotCourseChange = 4;
-const BotRandomMoveCount = 4;
+const BotRandomMoveCount = 12;
 
 export class GameService {
 	private levels = new Levels();
@@ -138,19 +138,35 @@ export class GameService {
 			distances.sort((a, b) => a.distance - b.distance);
 			let nearestHunter = distances[0];
 			let trackingHunter = distances.find(i => i.id === bot.trackingId);
-			if (!!trackingHunter || (nearestHunter !== trackingHunter && nearestHunter.distance + BotCourseChange < trackingHunter.distance)) {
+			if (!!!trackingHunter || (nearestHunter !== trackingHunter && nearestHunter.distance + BotCourseChange < trackingHunter.distance)) {
 				bot.trackingId = nearestHunter.id;
 			}
 
 			let preyCoordinate = gameBoard.getCoordinateById(bot.trackingId);
-			let xDistance = Math.abs(preyCoordinate.x - botCoordinate.x);
-			let yDistance = Math.abs(preyCoordinate.y - botCoordinate.y);
-			let moves = xDistance >= yDistance ? [Direction.Left, Direction.Right, Direction.Up, Direction.Down] : [Direction.Up, Direction.Down, Direction.Left, Direction.Right];
+			let xDistance = preyCoordinate.x - botCoordinate.x;
+			let yDistance = preyCoordinate.y - botCoordinate.y;
+			let moves = [];
+			if (Math.abs(xDistance) >= Math.abs(yDistance)) {
+				moves.push(xDistance > 0 ? Direction.Right : Direction.Left);
+				if (yDistance > 0) {
+					moves.push(Direction.Down);
+				} else if (yDistance < 0) {
+					moves.push(Direction.Up);
+				}
+				moves.push(yDistance > 0 ? Direction.Down : Direction.Up);
+			} else {
+				moves.push(yDistance > 0 ? Direction.Down : Direction.Up);
+				if (xDistance > 0) {
+					moves.push(Direction.Right);
+				} else if (xDistance < 0) {
+					moves.push(Direction.Left);
+				}
+			}
 
 			let moved = false;
 			for (let i = 0; i < 4; i++) {
 				let newPosition = this.getPositionOfMove(botCoordinate, moves[i]);
-				if (gameBoard.getElement(newPosition) === undefined) {
+				if (newPosition && gameBoard.getElement(newPosition) === undefined) {
 					gameBoard.move(botCoordinate, newPosition);
 					moved = true;
 					break;
@@ -167,9 +183,9 @@ export class GameService {
 			bot.randomCount--;
 			let moves = [Direction.Up, Direction.Down, Direction.Left, Direction.Right];
 			for (let i = 0; i < 4; i++) {
-				let move = moves.splice(Math.floor(Math.random() * moves.length));
+				let move = moves.splice(Math.floor(Math.random() * moves.length), 1);
 				let newPosition = this.getPositionOfMove(botCoordinate, moves[i]);
-				if (gameBoard.getElement(newPosition) === undefined) {
+				if (newPosition && gameBoard.getElement(newPosition) === undefined) {
 					gameBoard.move(botCoordinate, newPosition);
 					break;
 				}

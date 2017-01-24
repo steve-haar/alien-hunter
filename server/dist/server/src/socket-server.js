@@ -5,7 +5,7 @@ const services_1 = require("./services");
 const io = require("socket.io");
 const HunterUpdateInterval = 75;
 const AlienUpdateInterval = 75;
-const BotUpdateInterval = 30000;
+const BotUpdateInterval = 150;
 class SocketServer {
     constructor(httpServer) {
         this.httpServer = httpServer;

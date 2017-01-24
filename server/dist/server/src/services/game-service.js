@@ -12,7 +12,7 @@ const MinX = 0;
 const MaxY = GameHeight - 1;
 const MinY = 0;
 const BotCourseChange = 4;
-const BotRandomMoveCount = 4;
+const BotRandomMoveCount = 12;
 class GameService {
     constructor() {
         this.levels = new levels_1.Levels();
@@ -115,17 +115,36 @@ class GameService {
             distances.sort((a, b) => a.distance - b.distance);
             let nearestHunter = distances[0];
             let trackingHunter = distances.find(i => i.id === bot.trackingId);
-            if (!!trackingHunter || (nearestHunter !== trackingHunter && nearestHunter.distance + BotCourseChange < trackingHunter.distance)) {
+            if (!!!trackingHunter || (nearestHunter !== trackingHunter && nearestHunter.distance + BotCourseChange < trackingHunter.distance)) {
                 bot.trackingId = nearestHunter.id;
             }
             let preyCoordinate = gameBoard.getCoordinateById(bot.trackingId);
-            let xDistance = Math.abs(preyCoordinate.x - botCoordinate.x);
-            let yDistance = Math.abs(preyCoordinate.y - botCoordinate.y);
-            let moves = xDistance >= yDistance ? [enum_1.Direction.Left, enum_1.Direction.Right, enum_1.Direction.Up, enum_1.Direction.Down] : [enum_1.Direction.Up, enum_1.Direction.Down, enum_1.Direction.Left, enum_1.Direction.Right];
+            let xDistance = preyCoordinate.x - botCoordinate.x;
+            let yDistance = preyCoordinate.y - botCoordinate.y;
+            let moves = [];
+            if (Math.abs(xDistance) >= Math.abs(yDistance)) {
+                moves.push(xDistance > 0 ? enum_1.Direction.Right : enum_1.Direction.Left);
+                if (yDistance > 0) {
+                    moves.push(enum_1.Direction.Down);
+                }
+                else if (yDistance < 0) {
+                    moves.push(enum_1.Direction.Up);
+                }
+                moves.push(yDistance > 0 ? enum_1.Direction.Down : enum_1.Direction.Up);
+            }
+            else {
+                moves.push(yDistance > 0 ? enum_1.Direction.Down : enum_1.Direction.Up);
+                if (xDistance > 0) {
+                    moves.push(enum_1.Direction.Right);
+                }
+                else if (xDistance < 0) {
+                    moves.push(enum_1.Direction.Left);
+                }
+            }
             let moved = false;
             for (let i = 0; i < 4; i++) {
                 let newPosition = this.getPositionOfMove(botCoordinate, moves[i]);
-                if (gameBoard.getElement(newPosition) === undefined) {
+                if (newPosition && gameBoard.getElement(newPosition) === undefined) {
                     gameBoard.move(botCoordinate, newPosition);
                     moved = true;
                     break;
@@ -140,9 +159,9 @@ class GameService {
             bot.randomCount--;
             let moves = [enum_1.Direction.Up, enum_1.Direction.Down, enum_1.Direction.Left, enum_1.Direction.Right];
             for (let i = 0; i < 4; i++) {
-                let move = moves.splice(Math.floor(Math.random() * moves.length));
+                let move = moves.splice(Math.floor(Math.random() * moves.length), 1);
                 let newPosition = this.getPositionOfMove(botCoordinate, moves[i]);
-                if (gameBoard.getElement(newPosition) === undefined) {
+                if (newPosition && gameBoard.getElement(newPosition) === undefined) {
                     gameBoard.move(botCoordinate, newPosition);
                     break;
                 }

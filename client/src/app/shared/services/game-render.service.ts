@@ -126,7 +126,7 @@ export class GameRenderService {
   private createCamera() {
     this.pitchObject.add(this.camera);
     this.yawObject.rotation.x = -PI_2;
-    this.yawObject.position.z = 700;
+    this.yawObject.position.z = 750;
     this.yawObject.add(this.pitchObject);
     this.scene.add(this.yawObject);
   }

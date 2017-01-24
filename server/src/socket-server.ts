@@ -7,7 +7,7 @@ import * as http from 'http';
 
 const HunterUpdateInterval = 75;
 const AlienUpdateInterval = 75;
-const BotUpdateInterval = 30000;
+const BotUpdateInterval = 150;
 
 export class SocketServer {
   private socketServer: SocketIO.Server;
