@@ -51,8 +51,10 @@ class SocketServer {
             this.roomService.leaveRoom(playerName, room.getName());
             this.broadcastUpdate(room, false);
             if (room.players.length === 0) {
-                clearInterval(this.gameIntervals[room.getName()]);
-                delete this.gameIntervals[room.getName()];
+                if (this.gameIntervals[room.getName()]) {
+                    this.gameIntervals[room.getName()].map(i => clearInterval(i));
+                    delete this.gameIntervals[room.getName()];
+                }
             }
         });
         socket.in('room:' + room.getName()).on('kickPlayer', (playerNameToKick) => {
@@ -86,9 +88,11 @@ class SocketServer {
         socket.in('room:' + room.getName()).on('startGame', () => {
             this.gameService.startGame(room);
             this.broadcastGameUpdate(room.getName());
-            this.gameIntervals[room.getName()] = setInterval(() => this.moveHunters(room.getName()), HunterUpdateInterval);
-            this.gameIntervals[room.getName()] = setInterval(() => this.moveAliens(room.getName()), AlienUpdateInterval);
-            this.gameIntervals[room.getName()] = setInterval(() => this.moveBots(room.getName()), BotUpdateInterval);
+            let intervals = [];
+            intervals.push(setInterval(() => this.moveHunters(room.getName()), HunterUpdateInterval));
+            intervals.push(setInterval(() => this.moveAliens(room.getName()), AlienUpdateInterval));
+            intervals.push(setInterval(() => this.moveBots(room.getName()), BotUpdateInterval));
+            this.gameIntervals[room.getName()] = intervals;
         });
         socket.in('room:' + room.getName()).on('move', (direction) => {
             this.gameService.move(room.getName(), playerName, direction);

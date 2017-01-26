@@ -110,63 +110,70 @@ class GameService {
     moveBot(gameBoard, bot) {
         let botCoordinate = gameBoard.getCoordinateById(bot.id);
         let hunters = gameBoard.players.filter(i => i.playerType === enum_1.PlayerType.Hunter);
-        if (bot.randomCount === 0) {
-            let distances = hunters.map(hunter => { return { id: hunter.id, distance: this.getDistance(gameBoard, bot, hunter) }; });
-            distances.sort((a, b) => a.distance - b.distance);
-            let nearestHunter = distances[0];
-            let trackingHunter = distances.find(i => i.id === bot.trackingId);
-            if (!!!trackingHunter || (nearestHunter !== trackingHunter && nearestHunter.distance + BotCourseChange < trackingHunter.distance)) {
-                bot.trackingId = nearestHunter.id;
-            }
-            let preyCoordinate = gameBoard.getCoordinateById(bot.trackingId);
-            let xDistance = preyCoordinate.x - botCoordinate.x;
-            let yDistance = preyCoordinate.y - botCoordinate.y;
-            let moves = [];
-            if (Math.abs(xDistance) >= Math.abs(yDistance)) {
-                moves.push(xDistance > 0 ? enum_1.Direction.Right : enum_1.Direction.Left);
-                if (yDistance > 0) {
-                    moves.push(enum_1.Direction.Down);
-                }
-                else if (yDistance < 0) {
-                    moves.push(enum_1.Direction.Up);
-                }
-                moves.push(yDistance > 0 ? enum_1.Direction.Down : enum_1.Direction.Up);
-            }
-            else {
-                moves.push(yDistance > 0 ? enum_1.Direction.Down : enum_1.Direction.Up);
-                if (xDistance > 0) {
-                    moves.push(enum_1.Direction.Right);
-                }
-                else if (xDistance < 0) {
-                    moves.push(enum_1.Direction.Left);
-                }
-            }
-            let moved = false;
-            for (let i = 0; i < 4; i++) {
-                let newPosition = this.getPositionOfMove(botCoordinate, moves[i]);
-                if (newPosition && gameBoard.getElement(newPosition) === undefined) {
-                    gameBoard.move(botCoordinate, newPosition);
-                    moved = true;
-                    break;
-                }
-            }
-            if (moved == false) {
-                bot.trackingId = null;
-                bot.randomCount = BotRandomMoveCount;
-            }
+        let distances = hunters.map(hunter => { return { id: hunter.id, distance: this.getDistance(gameBoard, bot, hunter) }; });
+        distances.sort((a, b) => a.distance - b.distance);
+        let nearestHunter = distances[0];
+        let trackingHunter = distances.find(i => i.id === bot.trackingId);
+        if (!!!trackingHunter || (nearestHunter !== trackingHunter && nearestHunter.distance + BotCourseChange < trackingHunter.distance)) {
+            bot.trackingId = nearestHunter.id;
         }
-        if (bot.randomCount > 0) {
-            bot.randomCount--;
-            let moves = [enum_1.Direction.Up, enum_1.Direction.Down, enum_1.Direction.Left, enum_1.Direction.Right];
-            for (let i = 0; i < 4; i++) {
-                let move = moves.splice(Math.floor(Math.random() * moves.length), 1);
-                let newPosition = this.getPositionOfMove(botCoordinate, moves[i]);
-                if (newPosition && gameBoard.getElement(newPosition) === undefined) {
-                    gameBoard.move(botCoordinate, newPosition);
-                    break;
+        let preyCoordinate = gameBoard.getCoordinateById(bot.trackingId);
+        let distanceGraph = this.createDistanceGraph(gameBoard, preyCoordinate, botCoordinate);
+        let neighborCoordinates = [enum_1.Direction.Left, enum_1.Direction.Right, enum_1.Direction.Up, enum_1.Direction.Down]
+            .map(move => this.getPositionOfMove(botCoordinate, move))
+            .filter(move => move);
+        let neighborDistances = neighborCoordinates
+            .map(coord => distanceGraph[coord.x][coord.y]);
+        let minIndex = null;
+        let min = null;
+        for (let i = 0; i < neighborDistances.length; i++) {
+            let distance = neighborDistances[i];
+            if (distance !== undefined && distance !== null) {
+                if (min === null || distance < min) {
+                    minIndex = i;
+                    min = distance;
                 }
             }
         }
+        if (minIndex !== null && gameBoard.getElement(neighborCoordinates[minIndex]) === undefined) {
+            gameBoard.move(botCoordinate, neighborCoordinates[minIndex]);
+        }
+    }
+    createDistanceGraph(gameBoard, startingCoordinate, endingCoordinate) {
+        let directions = [enum_1.Direction.Up, enum_1.Direction.Down, enum_1.Direction.Left, enum_1.Direction.Right];
+        let graph = this.get2dArray(GameWidth, GameHeight, undefined);
+        let queue = [startingCoordinate];
+        let visited = [];
+        graph[startingCoordinate.x][startingCoordinate.y] = 0;
+        while (queue.length && visited.find(i => i.x === endingCoordinate.x && i.y === endingCoordinate.y) === undefined) {
+            let coordinate = queue[0];
+            let distance = graph[coordinate.x][coordinate.y];
+            let neighbors = directions.map(direction => this.getPositionOfMove(coordinate, direction)).filter(neighbor => neighbor);
+            neighbors.map(neighbor => {
+                if (graph[neighbor.x][neighbor.y] === undefined) {
+                    if (gameBoard.getElement(neighbor) === undefined) {
+                        graph[neighbor.x][neighbor.y] = distance + 1;
+                        queue.push(neighbor);
+                    }
+                    else {
+                        graph[neighbor.x][neighbor.y] = null;
+                        visited.push(neighbor);
+                    }
+                }
+            });
+            queue.splice(0, 1);
+        }
+        return graph;
+    }
+    get2dArray(l1, l2, initial) {
+        let result = [];
+        for (let i = 0; i < l1; i++) {
+            result.push(new Array(l2));
+            for (let j = 0; j < l2; j++) {
+                result[i][j] = initial;
+            }
+        }
+        return result;
     }
     pushBlocks(gameBoard, player, position) {
         if (player.canPushBlocks()) {

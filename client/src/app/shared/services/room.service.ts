@@ -12,7 +12,9 @@ const HealthCheckInterval = 1000;
 export class RoomService {
   private socket: SocketIOClient.Socket;
   private healthCheckSendTime;
+  private gameTimes = [];
   public latency;
+  public fps;
 
   connect(url: string) {
     this.socket = io.connect(url);
@@ -37,7 +39,16 @@ export class RoomService {
 
     this.socket.addEventListener('playerName', userNameCallback);
     this.socket.addEventListener('room', room => roomObs.next(Room.deserialize(room)));
-    this.socket.addEventListener('game', gameBoard => gameBoardObs.next(GameBoard.deserialize(gameBoard)));
+    this.socket.addEventListener('game', gameBoard => {
+      let time = new Date().getTime();
+      if (this.gameTimes.length === 100) {
+        this.fps = Math.round(100000 / (this.gameTimes[99] - this.gameTimes[0]));
+        this.gameTimes = [];
+      } else {
+        this.gameTimes.push(time);
+      }
+      gameBoardObs.next(GameBoard.deserialize(gameBoard));
+    });
     this.socket.addEventListener('health', () => this.latency = new Date().getTime() - this.healthCheckSendTime);
 
     setInterval(() => this.healthCheck(), HealthCheckInterval);

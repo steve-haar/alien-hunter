@@ -4,6 +4,7 @@
 <button type="button" (click)="startGame()">Start</button>
 <br />
 Latency: {{roomService.latency}}
+FPS: {{roomService.fps}}
 <br />
 <div *ngIf="(room | async)?.getHostPlayer().name === playerName">
   <input #level type="number" min="0" max="2" [value]="(room | async)?.level || 0" />
