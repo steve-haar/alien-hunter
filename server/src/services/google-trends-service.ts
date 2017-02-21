@@ -15,7 +15,7 @@ export class GoogleTrendsService {
   private getOptions(): requestPromise.OptionsWithUrl {
     return {
       method: 'POST',
-      url: 'https://www.google.com/trends/topcharts/chart',
+      url: 'https://trends.google.com/trends/topcharts/chart',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
@@ -25,8 +25,7 @@ export class GoogleTrendsService {
   }
 
   private getRequestData() {
-    let threeMonthsAgo = moment().add(-3, 'month');
-    let date = `${threeMonthsAgo.year()}${this.pad(threeMonthsAgo.month() + 1, 2)}`;
+    let date = '201611';
     return `ajax=1&date=${date}&geo=US&cid=people`;
   }
 
